@@ -1,0 +1,83 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library('topicmodels')
+library('reshape2')
+library('dplyr')
+library('bbmle')
+library('ggplot2')
+library('tidytext')
+library('data.table')
+library(MetaTopics)
+
+```
+
+
+```{r}
+count<-read.csv("~/Desktop/LDA-binder/melt.csv")
+counts <- dcast(count, Sample~Genus, value.var="Abundance")
+counts
+
+library(tidyverse)
+counts<-counts %>% remove_rownames %>% column_to_rownames(var="Sample")
+counts 
+#counts <- counts[,-1] #drop sample id
+
+```
+```{r}
+#meta_count<- data.frame("Sample" = c("High_A", "High_B","Low_A","Low_B"), "Sample_2" = c("High_A", "High_B","Low_A","Low_B"))
+#meta_count<- read.csv("~/Desktop/LDA-binder_2/LDA_2.csv", header=T)
+#meta_count
+#meta_count<-meta_count %>% remove_rownames %>% column_to_rownames(var="Sample")
+#meta_count<-as.matrix(meta_count)
+#meta_count
+#meta_count<-t(meta_count)
+#meta_count
+#plot(meta_count)
+##list(t(meta_count))
+#lls
+# meta_count<-t(meta_count) %>% remove_rownames
+#t(lls)
+```
+
+```{r}
+VEM2= LDA(counts, k = 2, method = "Gibbs")
+VEM3= LDA(counts, k = 3, method = "Gibbs")
+VEM4= LDA(counts, k = 4, method = "Gibbs")
+AICtab(VEM2,VEM3,VEM4)
+plot_beta(VEM2,prob=0.01)
+```
+```{r}
+plot_beta(VEM3,prob=0.01)
+```
+
+
+```{r}
+topicmodels2LDAvis <- function(x, ...){
+  post <- topicmodels::posterior(x)
+  if (ncol(post[["topics"]]) < 3) stop("The model must contain > 2 topics")
+  mat <- x@wordassignments
+  LDAvis::createJSON(
+    phi = post[["terms"]], 
+    theta = post[["topics"]],
+    vocab = colnames(post[["terms"]]),
+    doc.length = slam::row_sums(mat, na.rm = TRUE),
+    term.frequency = slam::col_sums(mat, na.rm = TRUE)
+  )
+}
+serVis(topicmodels2LDAvis(VEM3))
+```
+
+
+
+
+
+
